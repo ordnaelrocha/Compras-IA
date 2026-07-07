@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compras IA - Rastreamento Inteligente</title>
+    <!-- Ícones do Google Material Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!-- Fonte Inter & Orbitron -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
+    <!-- Biblioteca Chart.js para Gráficos via CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-gradient: radial-gradient(circle at top right, #121620, #08090d);
+            --surface: rgba(18, 22, 33, 0.75);
+            --surface-glass: rgba(255, 255, 255, 0.03);
+            --surface-card: #131824;
+            --border-glow: rgba(0, 229, 255, 0.15);
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            
+            --cyber-blue: #00e5ff;
+            --cyber-blue-dark: #00a8cc;
+            --gold-premium: #e5c158;
+            --neon-green: #39ff14;
+            --neon-red: #ff3366;
+            
+            --text-main: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --panel-promo: rgba(0, 229, 255, 0.04);
+            --live-panel: rgba(229, 193, 88, 0.05);
+            --total-color: #39ff14;
+        }
+
+        [data-theme="light"] {
+            --bg-gradient: radial-gradient(circle at top right, #f4f6fa, #e2e8f0);
+            --surface: rgba(255, 255, 255, 0.85);
+            --surface-card: #ffffff;
+            --border-glow: rgba(26, 115, 232, 0.1);
+            --border-subtle: rgba(0, 0, 0, 0.08);
+            --cyber-blue: #1a73e8;
+            --cyber-blue-dark: #1557b0;
+            --gold-premium: #b58900;
+            --neon-green: #117232;
+            --neon-red: #c5221f;
+            --text-main: #1f2937;
+            --text-secondary: #4b5563;
+            --panel-promo: rgba(26, 115, 232, 0.05);
+            --live-panel: rgba(181, 137, 0, 0.04);
+            --total-color: #0b4fbd;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+        body { background: var(--bg-gradient); color: var(--text-main); display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; padding: 24px 16px; transition: background 0.5s ease; }
+
+        .app-container { width: 100%; max-width: 760px; background: var(--surface); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--border-subtle); border-radius: 24px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4); overflow: hidden; display: flex; flex-direction: column; align-self: center; }
+        .app-header { padding: 24px 28px; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid var(--border-subtle); }
+        .header-brand { display: flex; align-items: center; gap: 12px; justify-content: center; }
+        .app-header .logo-icon { color: var(--cyber-blue); font-size: 32px; }
+        .app-header h1 { font-family: 'Orbitron', sans-serif; font-size: 20px; font-weight: 700; letter-spacing: 1.5px; background: linear-gradient(120deg, var(--text-main), var(--cyber-blue)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+        .tabs-container { display: flex; padding: 4px; background: rgba(0, 0, 0, 0.2); margin: 16px 24px 0 24px; border-radius: 14px; border: 1px solid var(--border-subtle); }
+        .tab-button { flex: 1; background: none; border: none; padding: 12px 0; font-size: 11px; font-weight: 600; color: var(--text-secondary); cursor: pointer; text-align: center; border-radius: 10px; transition: all 0.3s; text-transform: uppercase; letter-spacing: 0.5px; }
+        .tab-button.active { color: #ffffff; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-subtle); }
+        [data-theme="light"] .tab-button.active { color: #1f2937; background: #ffffff; }
+
+        .app-content { padding: 24px; display: flex; flex-direction: column; gap: 20px; }
+        
+        /* SISTEMA DE SUB-ABAS COMPACTO */
+        .shortcut-manager-card { background: rgba(0,0,0,0.15); border: 1px solid var(--border-subtle); border-radius: 20px; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+        [data-theme="light"] .shortcut-manager-card { background: rgba(255,255,255,0.4); }
+        .subtabs-header { display: flex; border-bottom: 1px solid var(--border-subtle); padding-bottom: 8px; gap: 16px; }
+        .subtab-link { background: none; border: none; font-size: 11px; font-weight: 700; color: var(--text-secondary); cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px; padding-bottom: 6px; position: relative; }
+        .subtab-link.active { color: var(--text-main); }
+        .subtab-link.active::after { content: ''; position: absolute; bottom: -9px; left: 0; width: 100%; height: 2px; background: var(--cyber-blue); }
+
+        .input-card { background: var(--surface-card); padding: 20px; border-radius: 20px; border: 1px solid var(--border-subtle); display: flex; flex-direction: column; gap: 16px; }
+        .input-group { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+        .input-group label { font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; text-align: center; }
+        .row-inputs { display: flex; gap: 12px; align-items: center; justify-content: center; width: 100%; }
+        
+        input, select { width: 100%; padding: 12px 16px; border: 1px solid var(--border-subtle); border-radius: 12px; font-size: 14px; background-color: rgba(0, 0, 0, 0.2); color: var(--text-main); outline: none; text-align: center; transition: all 0.2s; }
+        [data-theme="light"] input, [data-theme="light"] select { background-color: #f8fafc; color: #1f2937; }
+        input:focus, select:focus { border-color: var(--cyber-blue); box-shadow: 0 0 10px rgba(0, 229, 255, 0.15); }
+
+        .tags-inner-wrapper { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; width: 100%; }
+        .dynamic-shortcut-tag { background-color: var(--surface-card); color: var(--text-main); padding: 10px 32px 10px 14px; border-radius: 12px; font-size: 12px; font-weight: 500; cursor: pointer; border: 1px solid var(--border-subtle); display: inline-flex; align-items: center; position: relative; transition: all 0.2s; }
+        .dynamic-shortcut-tag.product-tag-style { border-left: 3px solid var(--gold-premium); }
+        .dynamic-shortcut-tag.market-tag-style { border-left: 3px solid var(--cyber-blue); }
+        .btn-delete-tag { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-secondary); }
+        .btn-delete-tag:hover { background: var(--neon-red); color: white; }
+        .btn-create-tag { background: rgba(255, 255, 255, 0.02); border: 1px dashed var(--text-secondary); color: var(--text-secondary); padding: 10px 14px; border-radius: 12px; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
+
+        /* PAINEL DE INTELIGÊNCIA DE PREÇOS REFORMULADO */
+        .live-pricing-panel { background-color: rgba(0,0,0,0.2); border: 1px solid var(--border-subtle); padding: 16px; border-radius: 16px; font-size: 12.5px; display: none; flex-direction: column; gap: 10px; text-align: center; align-items: center; width: 100%; }
+        [data-theme="light"] .live-pricing-panel { background-color: #f1f5f9; }
+        .live-pricing-title { font-weight: 700; color: var(--cyber-blue); display: flex; align-items: center; gap: 6px; text-transform: uppercase; font-size: 11px; justify-content: center; }
+
+        .btn-add { width: 100%; padding: 14px; border-radius: 12px; font-size: 13px; font-weight: 700; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; text-transform: uppercase; letter-spacing: 0.5px; border: none; transition: all 0.2s; background-color: var(--cyber-blue); color: #08090d; box-shadow: 0 4px 20px rgba(0, 229, 255, 0.2); }
+        [data-theme="light"] .btn-add { color: #ffffff; }
+
+        .product-list { list-style: none; max-height: 310px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; width: 100%; }
+        .product-item { background: var(--surface-card); border: 1px solid var(--border-subtle); padding: 14px 16px; border-radius: 16px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: all 0.2s; }
+        .product-item.checked { background-color: rgba(0, 0, 0, 0.2); opacity: 0.6; }
+        .product-item.checked .prod-name { text-decoration: line-through; color: var(--text-secondary); }
+        .left-content { display: flex; align-items: center; gap: 12px; flex: 1; text-align: left; }
+        .product-info .prod-name { font-weight: 600; font-size: 14px; color: var(--text-main); }
+        .product-info .prod-details { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+        .tag-badge { font-size: 10px; padding: 3px 8px; border-radius: 6px; font-weight: 600; background-color: rgba(0, 229, 255, 0.06); color: var(--cyber-blue); border: 1px solid rgba(0, 229, 255, 0.15); display: inline-flex; align-items: center; gap: 4px; margin-top: 4px; }
+        .product-actions { display: flex; align-items: center; gap: 16px; }
+        .prod-total-price { font-weight: 700; font-size: 14px; font-family: 'Orbitron', sans-serif; }
+        .btn-delete { background: none; border: none; color: var(--text-secondary); cursor: pointer; }
+        .btn-delete:hover { color: var(--neon-red); }
+
+        .summary-card { background: rgba(0, 0, 0, 0.15); padding: 20px; border-radius: 20px; display: flex; flex-direction: column; gap: 14px; border: 1px solid var(--border-subtle); text-align: center; }
+        [data-theme="light"] .summary-card { background: rgba(255, 255, 255, 0.5); }
+        .summary-row { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+        .summary-row.total { border-bottom: 1px dashed var(--border-subtle); padding-bottom: 12px; }
+        .total-value { font-size: 26px; font-weight: 700; color: var(--total-color); font-family: 'Orbitron', sans-serif; transition: color 0.3s; }
+        .payment-box input { max-width: 130px; text-align: center; font-family: 'Orbitron', sans-serif; font-weight: 700; color: var(--gold-premium); }
+        .btn-checkout { width: 100%; padding: 14px; border-radius: 12px; background: transparent; color: var(--neon-green); border: 1px solid rgba(57, 255, 20, 0.3); font-weight: 700; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; }
+        .btn-checkout:hover { background: rgba(57, 255, 20, 0.05); border-color: var(--neon-green); }
+
+        .analytics-section { display: none; flex-direction: column; gap: 20px; width: 100%; }
+        .ai-summary-widget { background: linear-gradient(135deg, rgba(229, 193, 88, 0.08) 0%, rgba(0, 229, 255, 0.03) 100%); border: 1px solid rgba(229, 193, 88, 0.2); padding: 20px; border-radius: 20px; display: flex; flex-direction: column; gap: 14px; text-align: center; align-items: center; }
+        .ai-summary-title { font-size: 12px; font-weight: 700; color: var(--gold-premium); text-transform: uppercase; letter-spacing: 0.8px; display: flex; align-items: center; gap: 6px; }
+        .ai-metrics-grid { display: flex; gap: 12px; width: 100%; justify-content: center; }
+        .ai-metric-card { flex: 1; background: var(--surface-card); border: 1px solid var(--border-subtle); padding: 14px; border-radius: 14px; text-align: center; }
+        .ai-metric-label { font-size: 10px; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 4px; }
+        .ai-metric-val { font-size: 15px; font-weight: 700; color: var(--text-main); }
+
+        .charts-container-row { display: flex; flex-direction: column; gap: 20px; width: 100%; }
+        .chart-card { background: var(--surface-card); border: 1px solid var(--border-subtle); border-radius: 20px; padding: 20px; text-align: center; }
+        .chart-card h3 { font-size: 12px; font-weight: 600; margin-bottom: 16px; color: var(--text-secondary); text-transform: uppercase; display: flex; align-items: center; gap: 6px; justify-content: center; }
+
+        .filter-box { background: rgba(0,0,0,0.2); padding: 14px; border-radius: 14px; border: 1px solid var(--border-subtle); display: flex; flex-direction: column; gap: 6px; text-align: center; }
+        .table-container { width: 100%; overflow-x: auto; border: 1px solid var(--border-subtle); border-radius: 16px; background-color: var(--surface-card); }
+        .metric-table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: center; min-width: 700px; }
+        .metric-table th { background-color: rgba(0, 0, 0, 0.15); color: var(--text-secondary); padding: 14px 10px; font-weight: 600; border-bottom: 1px solid var(--border-subtle); text-transform: uppercase; font-size: 11px; }
+        .metric-table td { padding: 14px 10px; border-bottom: 1px solid var(--border-subtle); vertical-align: middle; }
+        
+        .cycle-badge { display: inline-block; padding: 4px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; background: rgba(229, 193, 88, 0.1); color: var(--gold-premium); border: 1px solid rgba(229, 193, 88, 0.2); }
+        .time-label { display: block; font-size: 10px; color: var(--text-secondary); margin-top: 3px; }
+        .date-edit-input { background: rgba(0,0,0,0.3); border: 1px solid var(--border-subtle); color: var(--text-main); font-size: 11px; padding: 5px; border-radius: 8px; width: 175px; text-align: center; font-family: inherit; }
+        [data-theme="light"] .date-edit-input { background: #f1f5f9; color: #1f2937; }
+
+        .empty-state { text-align: center; padding: 40px 10px; color: var(--text-secondary); font-size: 13px; width: 100%; }
+
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(4, 5, 8, 0.7); backdrop-filter: blur(8px); display: none; justify-content: center; align-items: center; z-index: 1000; padding: 20px; }
+        .modal-balloon { background: #0f131f; width: 100%; max-width: 420px; border-radius: 24px; padding: 24px; border: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; gap: 16px; text-align: center; align-items: center; }
+        [data-theme="light"] .modal-balloon { background: #ffffff; border-color: rgba(0,0,0,0.1); }
+        .modal-title { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px; font-family: 'Orbitron', sans-serif; justify-content: center; }
+        .modal-actions { display: flex; justify-content: center; gap: 10px; width: 100%; }
+        .modal-btn { flex: 1; padding: 12px; border-radius: 12px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; text-transform: uppercase; }
+        .modal-btn.cancel { background: rgba(255,255,255,0.05); color: var(--text-secondary); border: 1px solid var(--border-subtle); }
+        .modal-btn.confirm { background: var(--cyber-blue); color: #08090d; font-weight: 700; }
+        .modal-btn.success { background: var(--neon-green); color: #08090d; font-weight: 700; }
+
+        .btn-theme-toggle { position: fixed; bottom: 24px; right: 24px; width: 50px; height: 50px; border-radius: 16px; background-color: var(--surface-card); color: var(--gold-premium); border: 1px solid var(--border-subtle); cursor: pointer; display: flex; justify-content: center; align-items: center; box-shadow: 0 8px 24px rgba(0,0,0,0.3); z-index: 999; }
+    </style>
+</head>
+<body>
+
+<button class="btn-theme-toggle" onclick="toggleTheme()" id="themeToggleBtn"><span class="material-icons">light_mode</span></button>
+
+<!-- Modais Operacionais -->
+<div class="modal-overlay" id="customModalOverlay">
+    <div class="modal-balloon">
+        <div class="modal-title" id="customModalTitle" style="color: var(--cyber-blue);">Entrada Básica</div>
+        <input type="text" id="customModalInput" placeholder="...">
+        <div class="modal-actions">
+            <button class="modal-btn cancel" onclick="closeCustomModal()">Cancelar</button>
+            <button class="modal-btn confirm" id="customModalConfirmBtn">Validar</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="checkoutModalOverlay">
+    <div class="modal-balloon">
+        <div class="modal-title" style="color: var(--neon-green);"><span class="material-icons">verified</span> ARQUIVAR COMPRAS</div>
+        <p id="checkoutModalItemsCount" class="modal-body-text"></p>
+        <div class="modal-actions">
+            <button class="modal-btn cancel" onclick="closeCheckoutModal()">Retornar</button>
+            <button class="modal-btn success" onclick="confirmAndArchivePurchase()">Salvar Sessão</button>
+        </div>
+    </div>
+</div>
+
+<div class="app-container">
+    <header class="app-header">
+        <div class="header-brand">
+            <span class="material-icons logo-icon">blur_on</span>
+            <h1>COMPRAS IA</h1>
+        </div>
+    </header>
+
+    <div class="tabs-container">
+        <button class="tab-button active" id="tabPending" onclick="switchTab('pending')">Pendentes (0)</button>
+        <button class="tab-button" id="tabChecked" onclick="switchTab('checked')">No Carrinho (0)</button>
+        <button class="tab-button" id="tabHistory" onclick="switchTab('history')">Histórico Inteligente</button>
+    </div>
+
+    <div class="app-content">
+        <!-- SEÇÃO PRINCIPAL DE COMPRAS -->
+        <div id="mainShoppingSection" style="display: flex; flex-direction: column; gap: 20px; width: 100%;">
+            
+            <!-- CONTÊINER REFORMULADO: SUB-ABAS PARA PRODUTOS E MERCADOS -->
+            <div class="shortcut-manager-card">
+                <div class="subtabs-header">
+                    <button class="subtab-link active" id="subtabProducts" onclick="switchSubTab('products')">
+                        <span class="material-icons" style="font-size:14px;color:var(--gold-premium);">shopping_bag</span> Itens Cadastrados
+                    </button>
+                    <button class="subtab-link" id="subtabMarkets" onclick="switchSubTab('markets')">
+                        <span class="material-icons" style="font-size:14px;color:var(--cyber-blue);">storefront</span> Lojas Favoritas
+                    </button>
+                </div>
+                
+                <div id="wrapperProductsContent" class="tags-inner-wrapper"></div>
+                <div id="wrapperMarketsContent" class="tags-inner-wrapper" style="display: none;"></div>
+            </div>
+
+            <div class="input-card">
+                <div class="row-inputs">
+                    <div class="input-group">
+                        <label for="prodName">Item</label>
+                        <input type="text" id="prodName" placeholder="O que vai comprar?" oninput="livePriceCheck()">
+                    </div>
+                    <div class="input-group">
+                        <label for="prodMarket">Supermercado</label>
+                        <input type="text" id="prodMarket" placeholder="Localização" oninput="livePriceCheck()">
+                    </div>
+                </div>
+                
+                <div class="row-inputs">
+                    <div class="input-group" style="flex: 1;">
+                        <label for="prodQty">Qtd.</label>
+                        <input type="number" id="prodQty" value="1" min="1">
+                    </div>
+                    <div class="input-group" style="flex: 2;">
+                        <label for="prodPrice">Preço Unitário (R$)</label>
+                        <input type="number" id="prodPrice" placeholder="0,00" step="0.01" min="0" oninput="livePriceCheck()">
+                    </div>
+                </div>
+
+                <!-- Painel Comparativo Dinâmico -->
+                <div class="live-pricing-panel" id="livePricingPanel"></div>
+                <button class="btn-add" onclick="addProduct()"><span class="material-icons">add_box</span> Inserir na Lista</button>
+            </div>
+
+            <div style="width: 100%;"><ul class="product-list" id="productList"></ul></div>
+
+            <div class="summary-card">
+                <div class="summary-row total">
+                    <span style="font-weight: 600; font-size: 11px; text-transform: uppercase;">Subtotal do Carrinho:</span>
+                    <span class="total-value" id="totalValue">R$ 0,00</span>
+                </div>
+                <div class="summary-row">
+                    <span style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase;">Valor Pago (Dinheiro):</span>
+                    <div class="payment-box"><input type="number" id="paymentAmount" placeholder="0,00" step="0.01" oninput="calculateChange()"></div>
+                </div>
+                <div class="summary-row">
+                    <span style="font-size: 11px; font-weight: 600; text-transform: uppercase;">Troco Calculado:</span>
+                    <span id="changeValue" style="font-weight: 700; font-family: 'Orbitron';">R$ 0,00</span>
+                </div>
+                <button class="btn-checkout" onclick="openCheckoutModal()"><span class="material-icons">inventory</span> Arquivar Lote e Limpar Lista</button>
+            </div>
+        </div>
+
+        <!-- SEÇÃO ANALYTICS (HISTÓRICO EXPANDIDO COM MONITOR DE MOVIMENTAÇÃO) -->
+        <div id="analyticsSection" class="analytics-section">
+            <div class="ai-summary-widget">
+                <div class="ai-summary-title"><span class="material-icons" style="font-size:16px;">psychology</span> Monitor de Consumo & Movimentação</div>
+                <div class="ai-metrics-grid">
+                    <div class="ai-metric-card">
+                        <div class="ai-metric-label">Mais Comprado</div>
+                        <div class="ai-metric-val" id="aiMostBought">-</div>
+                    </div>
+                    <div class="ai-metric-card">
+                        <div class="ai-metric-val" style="color:var(--neon-green);" id="aiTopMarket">-</div>
+                        <div class="ai-metric-label">Onde Mais Gastou</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="charts-container-row">
+                <div class="chart-card">
+                    <h3><span class="material-icons" style="color:var(--cyber-blue); font-size:15px;">bar_chart</span>Despesas Consolidadas por Mercado (R$)</h3>
+                    <div style="position: relative; width: 100%; height: 200px;"><canvas id="marketChart"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <h3><span class="material-icons" style="color:var(--gold-premium); font-size:15px;">pie_chart</span>Distribuição de Volume por Item</h3>
+                    <div style="position: relative; width: 100%; height: 200px;"><canvas id="itemsPieChart"></canvas></div>
+                </div>
+            </div>
+
+            <div class="filter-box">
+                <label style="font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase;">Filtrar Histórico de Lojas:</label>
+                <select id="marketFilterSelect" onchange="renderAnalyticsDashboard()"><option value="todos">Todas as Lojas</option></select>
+            </div>
+
+            <div class="table-container">
+                <table class="metric-table">
+                    <thead>
+                        <tr>
+                            <th>Produto</th>
+                            <th>Local</th>
+                            <th>Qtd.</th>
+                            <th>Preço Unit.</th>
+                            <th>Total Pago</th>
+                            <th>Ciclo de Retorno</th>
+                            <th>Rastreamento de Data / Horário</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody"></tbody>
+                </table>
+            </div>
+            <div id="historyEmptyState"></div>
+        </div>
+    </div>
+</div>
+<script>
+    let products = JSON.parse(localStorage.getItem('compras_products')) || [];
+    let archiveHistory = JSON.parse(localStorage.getItem('compras_history')) || []; 
+    let globalPriceDatabase = JSON.parse(localStorage.getItem('compras_price_db')) || {};
+    
+    let savedMarkets = JSON.parse(localStorage.getItem('compras_saved_markets')) || ['Atacadão', 'Carrefour', 'Assaí'];
+    let savedProductNames = JSON.parse(localStorage.getItem('compras_saved_products')) || ['Arroz 5kg', 'Feijão 1kg', 'Leite 1L'];
+
+    let currentTab = 'pending';
+    let currentSubTab = 'products'; // Controla sub-aba ativa ('products' ou 'markets')
+    let chartBarInstance = null;
+    let chartPieInstance = null;
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        updateThemeIcon(savedTheme);
+        renderShortcuts();
+        
+        document.getElementById('mainShoppingSection').style.display = 'flex';
+        document.getElementById('analyticsSection').style.display = 'none';
+        
+        updateUI();
+    });
+
+    function saveToLocalStorage() {
+        localStorage.setItem('compras_products', JSON.stringify(products));
+        localStorage.setItem('compras_history', JSON.stringify(archiveHistory));
+        localStorage.setItem('compras_price_db', JSON.stringify(globalPriceDatabase));
+        localStorage.setItem('compras_saved_markets', JSON.stringify(savedMarkets));
+        localStorage.setItem('compras_saved_products', JSON.stringify(savedProductNames));
+    }
+
+    function toggleTheme() {
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+        updateThemeIcon(newTheme);
+        if (currentTab === 'history') renderAnalyticsDashboard();
+    }
+
+    function updateThemeIcon(theme) {
+        const btn = document.getElementById('themeToggleBtn');
+        btn.innerHTML = theme === 'dark' ? `<span class="material-icons">light_mode</span>` : `<span class="material-icons">dark_mode</span>`;
+        btn.style.color = theme === 'dark' ? 'var(--gold-premium)' : '#1f2937';
+    }
+
+    // ALTERNADOR DE SUB-ABAS DE CADASTRO
+    function switchSubTab(subTab) {
+        currentSubTab = subTab;
+        document.getElementById('subtabProducts').classList.toggle('active', subTab === 'products');
+        document.getElementById('subtabMarkets').classList.toggle('active', subTab === 'markets');
+        
+        document.getElementById('wrapperProductsContent').style.display = subTab === 'products' ? 'flex' : 'none';
+        document.getElementById('wrapperMarketsContent').style.display = subTab === 'markets' ? 'flex' : 'none';
+    }
+
+    // ENGINE DE ANÁLISE COMPARATIVA DE PREÇOS
+    function livePriceCheck() {
+        const name = document.getElementById('prodName').value.trim().toLowerCase();
+        const market = document.getElementById('prodMarket').value.trim().toLowerCase() || 'geral';
+        const priceInputVal = document.getElementById('prodPrice').value;
+        const price = parseFloat(priceInputVal);
+        const panel = document.getElementById('livePricingPanel');
+
+        if (!name || priceInputVal === "" || isNaN(price) || price <= 0 || !globalPriceDatabase[name]) { 
+            panel.style.display = 'none'; 
+            return; 
+        }
+
+        const historicMarkets = globalPriceDatabase[name];
+        let reportHtml = `<div class="live-pricing-title"><span class="material-icons" style="font-size:14px;">insights</span> Análise de Inteligência Artificial:</div>`;
+        let renderPanel = true;
+
+        // 1. Verificação de Preço contra o próprio histórico do mercado atual
+        if (historicMarkets[market] !== undefined) {
+            const record = historicMarkets[market];
+            if (price < record.price) {
+                reportHtml += `<p style="color: var(--neon-green);">🟢 Ótimo sinal! Está mais BARATO que sua última compra neste mercado (R$ ${record.price.toFixed(2).replace('.', ',')}).</p>`;
+            } else if (price > record.price) {
+                reportHtml += `<p style="color: var(--neon-red);">🔴 Alerta de Inflação! Está mais CARO comparado ao preço que você pagou antes aqui (R$ ${record.price.toFixed(2).replace('.', ',')}).</p>`;
+            } else {
+                reportHtml += `<p style="color: var(--text-main);">🟡 Preço estável. Idêntico ao último registro nesta loja.</p>`;
+            }
+        } else {
+            reportHtml += `<p style="color: var(--text-secondary);">ℹ️ Primeira vez comprando este item especificamente neste mercado.</p>`;
+        }
+
+        // 2. Rastreamento e Identificação do Local Mais Barato na Base de Dados Geral
+        let cheapestMarket = "", cheapestPrice = Infinity;
+        for (const mkt in historicMarkets) {
+            if (historicMarkets[mkt].price < cheapestPrice) {
+                cheapestPrice = historicMarkets[mkt].price; 
+                cheapestMarket = mkt;
+            }
+        }
+
+        if (cheapestMarket && cheapestMarket !== market) {
+            reportHtml += `<p style="color: var(--gold-premium); margin-top: 6px; font-size:11.5px; border-top:1px dashed var(--border-subtle); padding-top:6px;">🏆 <strong>Oportunidade:</strong> Este produto costuma ser mais barato no <strong>${cheapestMarket.toUpperCase()}</strong>, saindo por R$ ${cheapestPrice.toFixed(2).replace('.', ',')}.</p>`;
+        } else if (cheapestMarket === market && historicMarkets[market] !== undefined && price <= cheapestPrice) {
+            reportHtml += `<p style="color: var(--neon-green); margin-top: 6px; font-size:11.5px; border-top:1px dashed var(--border-subtle); padding-top:6px;">🏅 Confirmação: O <strong>${market.toUpperCase()}</strong> mantém o posto de local mais barato para este item.</p>`;
+        }
+
+        if (renderPanel) { panel.innerHTML = reportHtml; panel.style.display = 'flex'; } 
+        else { panel.style.display = 'none'; }
+    }
+
+    function addProduct() {
+        const nameInput = document.getElementById('prodName');
+        const marketInput = document.getElementById('prodMarket');
+        const qtyInput = document.getElementById('prodQty');
+        const priceInput = document.getElementById('prodPrice');
+
+        const name = nameInput.value.trim();
+        const market = marketInput.value.trim() || 'Geral';
+        const qty = parseInt(qtyInput.value);
+        const price = parseFloat(priceInput.value);
+
+        if (!name || isNaN(qty) || qty <= 0 || isNaN(price) || price < 0) { return; }
+
+        products.push({ id: Date.now(), name, market, qty, price, total: qty * price, checked: false });
+        nameInput.value = ''; priceInput.value = ''; qtyInput.value = '1';
+        document.getElementById('livePricingPanel').style.display = 'none';
+        
+        saveToLocalStorage();
+        updateUI();
+    }
+
+    function toggleCheck(id) { products = products.map(p => p.id === id ? { ...p, checked: !p.checked } : p); saveToLocalStorage(); updateUI(); }
+    function deleteProduct(id, event) { event.stopPropagation(); products = products.filter(p => p.id !== id); saveToLocalStorage(); updateUI(); }
+
+    function switchTab(tab) {
+        currentTab = tab;
+        document.getElementById('tabPending').classList.toggle('active', tab === 'pending');
+        document.getElementById('tabChecked').classList.toggle('active', tab === 'checked');
+        document.getElementById('tabHistory').classList.toggle('active', tab === 'history');
+
+        if (tab === 'history') {
+            document.getElementById('mainShoppingSection').style.display = 'none';
+            document.getElementById('analyticsSection').style.display = 'flex';
+            updateFilterDropdown();
+            renderAnalyticsDashboard();
+        } else {
+            document.getElementById('mainShoppingSection').style.display = 'flex';
+            document.getElementById('analyticsSection').style.display = 'none';
+            updateUI();
+        }
+    }
+
+    function openCheckoutModal() {
+        const checkedItems = products.filter(p => p.checked);
+        if (checkedItems.length === 0) return;
+        document.getElementById('checkoutModalItemsCount').innerText = `Deseja arquivar e salvar ${checkedItems.length} item(ns) no histórico de rastreamento?`;
+        document.getElementById('checkoutModalOverlay').style.display = 'flex';
+    }
+
+    function closeCheckoutModal() { document.getElementById('checkoutModalOverlay').style.display = 'none'; }
+
+    function confirmAndArchivePurchase() {
+        const checkedItems = products.filter(p => p.checked);
+        const now = new Date();
+        
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const timestampIso = `${year}-${month}-${day}T${hours}:${minutes}`;
+
+        checkedItems.forEach(item => {
+            const itemKey = item.name.toLowerCase();
+            const marketKey = item.market.toLowerCase();
+            
+            if (!globalPriceDatabase[itemKey]) globalPriceDatabase[itemKey] = {};
+            globalPriceDatabase[itemKey][marketKey] = { price: item.price, date: timestampIso };
+            
+            archiveHistory.push({ 
+                ...item, 
+                date: timestampIso, 
+                uid: Date.now() + Math.random() 
+            });
+        });
+
+        products = products.filter(p => !p.checked);
+        document.getElementById('paymentAmount').value = '';
+        closeCheckoutModal();
+        saveToLocalStorage();
+        switchTab('history');
+    }
+
+    function updateItemDate(uid, newFullTimestamp) {
+        if(!newFullTimestamp) return;
+        archiveHistory = archiveHistory.map(item => {
+            if(item.uid === uid) {
+                item.date = newFullTimestamp;
+                const itemKey = item.name.toLowerCase();
+                const mktKey = item.market.toLowerCase();
+                if(globalPriceDatabase[itemKey] && globalPriceDatabase[itemKey][mktKey]) {
+                    globalPriceDatabase[itemKey][mktKey].date = newFullTimestamp;
+                }
+            }
+            return item;
+        });
+        saveToLocalStorage();
+        renderAnalyticsDashboard(); 
+    }
+
+    function updateFilterDropdown() {
+        const select = document.getElementById('marketFilterSelect');
+        select.innerHTML = '<option value="todos">Todas as Lojas</option>';
+        let mercadosUnicos = [...new Set(archiveHistory.map(item => item.market))];
+        mercadosUnicos.forEach(m => {
+            const opt = document.createElement('option'); opt.value = m; opt.innerText = m; select.appendChild(opt);
+        });
+    }
+
+    function computeMetricsSummary() {
+        if(archiveHistory.length === 0) {
+            document.getElementById('aiMostBought').innerText = "-";
+            document.getElementById('aiTopMarket').innerText = "-";
+            return;
+        }
+        let productQtys = {}; let marketSpending = {};
+        archiveHistory.forEach(item => {
+            productQtys[item.name] = (productQtys[item.name] || 0) + item.qty;
+            marketSpending[item.market] = (marketSpending[item.market] || 0) + item.total;
+        });
+        let topProduct = "-"; let maxQty = 0;
+        for(let p in productQtys) { if(productQtys[p] > maxQty) { maxQty = productQtys[p]; topProduct = p; } }
+        let topMarket = "-"; let maxSpend = 0;
+        for(let m in marketSpending) { if(marketSpending[m] > maxSpend) { maxSpend = marketSpending[m]; topMarket = m; } }
+        document.getElementById('aiMostBought').innerText = topProduct !== "-" ? `${topProduct} (${maxQty} un)` : "-";
+        document.getElementById('aiTopMarket').innerText = topMarket !== "-" ? `R$ ${maxSpend.toFixed(2).replace('.',',')}` : "-";
+    }
+
+    function calculateDaysBetweenPurchases(currentTrackedItem, fullHistoryList) {
+        const mesmoProdutoHistorico = fullHistoryList
+            .filter(item => item.name.toLowerCase() === currentTrackedItem.name.toLowerCase())
+            .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+        const indexAtual = mesmoProdutoHistorico.findIndex(item => item.uid === currentTrackedItem.uid);
+        
+        if (indexAtual <= 0) {
+            return `<span class="cycle-badge" style="background:rgba(0,229,255,0.05); color:var(--cyber-blue); border-color:rgba(0,229,255,0.1)">Primeira Compra</span>`;
+        }
+
+        const dataCompraAnterior = new Date(mesmoProdutoHistorico[indexAtual - 1].date);
+        const dataCompraAtual = new Date(currentTrackedItem.date);
+        
+        const diferencaTempo = dataCompraAtual - dataCompraAnterior;
+        const diferencaDias = Math.floor(diferencaTempo / (1000 * 60 * 60 * 24));
+
+        if (diferencaDias === 0) {
+            return `<span class="cycle-badge" style="color:var(--neon-green); background:rgba(57,255,20,0.05); border-color:rgba(57,255,20,0.1)">Mesmo Dia</span>`;
+        }
+        
+        return `<span class="cycle-badge">Voltou em ${diferencaDias} ${diferencaDias === 1 ? 'dia' : 'dias'}</span>`;
+    }
+
+    function renderAnalyticsDashboard() {
+        const tbody = document.getElementById('historyTableBody');
+        const emptyState = document.getElementById('historyEmptyState');
+        const filterValue = document.getElementById('marketFilterSelect').value;
+        
+        tbody.innerHTML = ''; 
+        emptyState.innerHTML = '';
+        computeMetricsSummary();
+
+        if (archiveHistory.length === 0) {
+            emptyState.innerHTML = `<div class="empty-state"><span class="material-icons">query_stats</span>Nenhuma movimentação registrada no rastreador. Adicione itens, marque-os e clique em "Arquivar Lote".</div>`;
+            if(chartBarInstance) chartBarInstance.destroy();
+            if(chartPieInstance) chartPieInstance.destroy();
+            return;
+        }
+
+        let itensFiltrados = archiveHistory;
+        if(filterValue !== 'todos') { itensFiltrados = archiveHistory.filter(item => item.market === filterValue); }
+
+        let listaCronologicaInversa = [...itensFiltrados].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        listaCronologicaInversa.forEach(item => {
+            const badgesDiasDeRetorno = calculateDaysBetweenPurchases(item, archiveHistory);
+            
+            const d = new Date(item.date);
+            const horaFormatada = !isNaN(d.getTime()) ? d.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}) : '--:--';
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><strong>${item.name}</strong></td>
+                <td><span style="font-size:11px; text-transform:uppercase; color:var(--text-secondary)">${item.market}</span></td>
+                <td>${item.qty}</td>
+                <td>R$ ${item.price.toFixed(2).replace('.', ',')}</td>
+                <td><strong style="color:var(--cyber-blue)">R$ ${item.total.toFixed(2).replace('.', ',')}</strong></td>
+                <td>${badgesDiasDeRetorno}</td>
+                <td>
+                    <input type="datetime-local" class="date-edit-input" value="${item.date}" onchange="updateItemDate(${item.uid}, this.value)">
+                    <span class="time-label">Horário salvo: ${horaFormatada}</span>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        let mktData = {}; let itemVolumeData = {};
+        archiveHistory.forEach(item => {
+            mktData[item.market] = (mktData[item.market] || 0) + item.total;
+            itemVolumeData[item.name] = (itemVolumeData[item.name] || 0) + item.qty;
+        });
+
+        if (chartBarInstance) chartBarInstance.destroy();
+        if (chartPieInstance) chartPieInstance.destroy();
+        
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.06)';
+        const labelColor = isDark ? '#9ca3af' : '#4b5563';
+
+        const ctxBar = document.getElementById('marketChart').getContext('2d');
+        chartBarInstance = new Chart(ctxBar, {
+            type: 'bar',
+            data: {
+                labels: Object.keys(mktData),
+                datasets: [{
+                    data: Object.values(mktData),
+                    backgroundColor: isDark ? 'rgba(0, 229, 255, 0.2)' : 'rgba(26, 115, 232, 0.4)',
+                    borderColor: isDark ? '#00e5ff' : '#1a73e8',
+                    borderWidth: 2, borderRadius: 6
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { grid: { color: gridColor }, ticks: { color: labelColor } }, x: { grid: { display: false }, ticks: { color: labelColor } } } }
+        });
+
+        const ctxPie = document.getElementById('itemsPieChart').getContext('2d');
+        chartPieInstance = new Chart(ctxPie, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(itemVolumeData),
+                datasets: [{
+                    data: Object.values(itemVolumeData),
+                    backgroundColor: ['#00e5ff', '#e5c158', '#39ff14', '#ff3366', '#a855f7', '#f97316'],
+                    borderWidth: isDark ? 2 : 1, borderColor: isDark ? '#131824' : '#ffffff'
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { color: labelColor, font: { size: 10 } } } }, cutout: '65%' }
+        });
+    }
+
+    function openCustomModal(title, placeholder, onConfirm) {
+        const overlay = document.getElementById('customModalOverlay');
+        const inputEl = document.getElementById('customModalInput');
+        document.getElementById('customModalTitle').innerText = title;
+        overlay.style.display = 'flex'; inputEl.value = ''; inputEl.placeholder = placeholder; inputEl.focus();
+        document.getElementById('customModalConfirmBtn').onclick = () => {
+            const val = inputEl.value.trim(); if (val) { onConfirm(val); closeCustomModal(); }
+        };
+    }
+    function closeCustomModal() { document.getElementById('customModalOverlay').style.display = 'none'; }
+
+    // RENDERIZAÇÃO SEPARADA POR ABAS INTERNAS DE CADASTRO
+    function renderShortcuts() {
+        const pWrap = document.getElementById('wrapperProductsContent'); pWrap.innerHTML = '';
+        savedProductNames.forEach(p => {
+            const tag = document.createElement('span'); tag.className = 'dynamic-shortcut-tag product-tag-style';
+            tag.innerHTML = `${p} <span class="btn-delete-tag" onclick="event.stopPropagation(); savedProductNames=savedProductNames.filter(x=>x!='${p}'); saveToLocalStorage(); renderShortcuts();">×</span>`;
+            tag.onclick = () => { document.getElementById('prodName').value = p; livePriceCheck(); }; pWrap.appendChild(tag);
+        });
+        const bP = document.createElement('button'); bP.className = 'btn-create-tag'; bP.innerHTML = '+ Adicionar Produto';
+        bP.onclick = () => openCustomModal("Novo Produto", "Nome do Produto", (v) => { if(!savedProductNames.includes(v)){savedProductNames.push(v); saveToLocalStorage(); renderShortcuts();} });
+        pWrap.appendChild(bP);
+
+        const mWrap = document.getElementById('wrapperMarketsContent'); mWrap.innerHTML = '';
+        savedMarkets.forEach(m => {
+            const tag = document.createElement('span'); tag.className = 'dynamic-shortcut-tag market-tag-style';
+            tag.innerHTML = `${m} <span class="btn-delete-tag" onclick="event.stopPropagation(); savedMarkets=savedMarkets.filter(x=>x!='${m}'); saveToLocalStorage(); renderShortcuts();">×</span>`;
+            tag.onclick = () => { document.getElementById('prodMarket').value = m; livePriceCheck(); }; mWrap.appendChild(tag);
+        });
+        const bM = document.createElement('button'); bM.className = 'btn-create-tag'; bM.innerHTML = '+ Adicionar Loja';
+        bM.onclick = () => openCustomModal("Nova Loja", "Nome do Mercado", (v) => { if(!savedMarkets.includes(v)){savedMarkets.push(v); saveToLocalStorage(); renderShortcuts();} });
+        mWrap.appendChild(bM);
+        
+        // Mantém a aba selecionada visível após renderizar
+        switchSubTab(currentSubTab);
+    }
+
+    function updateUI() {
+        const listContainer = document.getElementById('productList');
+        const pending = products.filter(p => !p.checked);
+        const checked = products.filter(p => p.checked);
+
+        document.getElementById('tabPending').innerText = `Pendentes (${pending.length})`;
+        document.getElementById('tabChecked').innerText = `No Carrinho (${checked.length})`;
+        listContainer.innerHTML = '';
+        const visible = currentTab === 'pending' ? pending : checked;
+
+        if (visible.length === 0) {
+            listContainer.innerHTML = `<div class="empty-state">Nenhum item nesta aba.</div>`;
+        } else {
+            visible.forEach(p => {
+                const li = document.createElement('li'); li.className = `product-item ${p.checked ? 'checked' : ''}`;
+                li.setAttribute('onclick', `toggleCheck(${p.id})`);
+                li.innerHTML = `
+                    <div class="left-content">
+                        <span class="material-icons" style="color:${p.checked ? 'var(--neon-green)':'var(--text-secondary)'}">${p.checked ? 'check_circle' : 'radio_button_unchecked'}</span>
+                        <div class="product-info">
+                            <div class="prod-name">${p.name}</div>
+                            <div class="prod-details">${p.qty}x de R$ ${p.price.toFixed(2).replace('.', ',')}</div>
+                            <span class="tag-badge">${p.market}</span>
+                        </div>
+                    </div>
+                    <div class="product-actions">
+                        <span class="prod-total-price">R$ ${p.total.toFixed(2).replace('.', ',')}</span>
+                        <button class="btn-delete" onclick="deleteProduct(${p.id}, event)"><span class="material-icons">clear</span></button>
+                    </div>
+                `;
+                listContainer.appendChild(li);
+            });
+        }
+        const total = checked.reduce((sum, p) => sum + p.total, 0);
+        document.getElementById('totalValue').innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
+        calculateChange();
+    }
+
+    function calculateChange() {
+        const total = products.filter(p => p.checked).reduce((sum, p) => sum + p.total, 0);
+        const payment = parseFloat(document.getElementById('paymentAmount').value);
+        const changeSpan = document.getElementById('changeValue');
+        if (isNaN(payment) || payment === 0) { changeSpan.innerText = 'R$ 0,00'; changeSpan.style.color = 'var(--text-main)'; return; }
+        const change = payment - total;
+        if (change >= 0) { changeSpan.innerText = `R$ ${change.toFixed(2).replace('.', ',')}`; changeSpan.style.color = 'var(--neon-green)'; }
+        else { changeSpan.innerText = `Falta R$ ${Math.abs(change).toFixed(2).replace('.', ',')}`; changeSpan.style.color = 'var(--neon-red)'; }
+    }
+</script>
